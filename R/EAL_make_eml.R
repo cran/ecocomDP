@@ -366,7 +366,7 @@ EAL_make_eml <- function(
   }
   
   # taxonomic_coverage.txt
-  # - Convert "" to NA as expected by make_taxonomicCoverage()
+  # - Convert "" to NA as expected by txcl_make_taxonomicCoverage()
   # - Add unresolved names to the name_resolved field so they will be listed in 
   # the output EML (with a rank value of "unknown").
   
@@ -872,14 +872,14 @@ EAL_make_eml <- function(
     if (!requireNamespace("worrms", quietly = TRUE)) {
       warning("Package 'worrms' is required for taxonomic rank expansion but is not installed", call. = FALSE)
     }
+    
     # Expand taxonomic ranks and create taxonomic coverage
     tc <- try(
       suppressMessages(
-        make_taxonomicCoverage(
+        txcl_make_taxonomicCoverage(
           taxa.clean = x$template$taxonomic_coverage.txt$content$name_resolved,
           authority = x$template$taxonomic_coverage.txt$content$authority_system,
           authority.id = x$template$taxonomic_coverage.txt$content$authority_id,
-          rank = x$template$taxonomic_coverage.txt$content$rank,
           write.file = F)),
       silent = T)
     if (class(tc) != "try-error") {
@@ -1094,6 +1094,7 @@ EAL_make_eml <- function(
     eml$dataset$dataTable <- lapply(
       names(x$data.table),
       function(k) {
+        message(k)
         
         # Get corresponding table_attributes.txt
         tbl_attr <- x$template[[
@@ -1151,6 +1152,9 @@ EAL_make_eml <- function(
         for (i in which(tbl_attr$class == "numeric")) {
           a <- x$data.table[[k]]$content[[tbl_attr$attributeName[i]]][
             !is.na(x$data.table[[k]]$content[[tbl_attr$attributeName[i]]])]
+          if (class(a) == "integer64") { # An exception for integer64 - Does not behave like a "numeric". Can remove this if we remove the data.table lib dependency
+            a <- as.numeric(a)
+          }
           a <- a[a != tbl_attr$missingValueCode[i]]
           if (all(is.na(a))) {
             attributes$minimum[i] <- NA

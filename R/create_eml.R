@@ -45,7 +45,7 @@
 #' # Create directory with ecocomDP tables for create_eml()
 #' mypath <- paste0(tempdir(), "/data")
 #' dir.create(mypath)
-#' inpts <- c(ants_L1$edi.193.4$tables, path = mypath)
+#' inpts <- c(ants_L1$edi.193.5$tables, path = mypath)
 #' do.call(write_tables, inpts)
 #' file.copy(system.file("extdata", "create_ecocomDP.R", package = "ecocomDP"), mypath)
 #' 
@@ -69,8 +69,8 @@
 #' # Create EML
 #' eml <- create_eml(
 #'   path = mypath,
-#'   source_id = "knb-lter-hfr.118.32",
-#'   derived_id = "edi.193.4",
+#'   source_id = "knb-lter-hfr.118.33",
+#'   derived_id = "edi.193.5",
 #'   is_about = dataset_annotations,
 #'   script = "create_ecocomDP.R",
 #'   script_description = "A function for converting knb-lter-hrf.118 to ecocomDP",
@@ -87,16 +87,16 @@
 #' }
 #'
 create_eml <- function(path,
-                     source_id, 
-                     derived_id, 
-                     script,
-                     script_description,
-                     is_about = NULL,
-                     contact,
-                     user_id, 
-                     user_domain,
-                     basis_of_record = NULL,
-                     url = NULL) {
+                       source_id, 
+                       derived_id, 
+                       script,
+                       script_description,
+                       is_about = NULL,
+                       contact,
+                       user_id, 
+                       user_domain,
+                       basis_of_record = NULL,
+                       url = NULL) {
   
   message("Creating EML for derived data package (" , derived_id, ")")
   
@@ -208,6 +208,15 @@ create_eml <- function(path,
   eml_L0 <- EML::read_eml(url_parent)
   xml_L0 <- suppressMessages(read_eml(source_id))
   
+  # Remove L0 data entities. These should not be inherited by the L1.
+  
+  eml_L0$dataset$dataTable <- NULL
+  eml_L0$dataset$spatialRaster <- NULL
+  eml_L0$dataset$spatialVector <- NULL
+  eml_L0$dataset$storedProcedure <- NULL
+  eml_L0$dataset$view <- NULL
+  eml_L0$dataset$otherEntity <- NULL
+  
   # Create L1 EML -------------------------------------------------------------
   
   message("Creating EML of L1 data package ", derived_id)
@@ -284,23 +293,10 @@ create_eml <- function(path,
       
       datetime <- eal_inputs$x$data.table[[data_table]]$content[[date_column]]
       
-      na_coerced <- suppressWarnings(
-        c(
-          sum(is.na(lubridate::parse_date_time(datetime, "ymdHMS"))),
-          sum(is.na(lubridate::parse_date_time(datetime, "ymdHM"))),
-          sum(is.na(lubridate::parse_date_time(datetime, "ymdH"))),
-          sum(is.na(lubridate::parse_date_time(datetime, "ymd")))))
-      
-      
-      if ((length(unique(na_coerced)) == 1) & (i != "attributes_observation.txt")) { # Default to observation table's datetime format specifier if no date time in ancillary tables
+      datetime_format <- parse_datetime_frmt_from_vals(datetime)
+      if ((is.null(datetime_format)) & (i != "attributes_observation.txt")) { # Default to observation table's datetime format specifier if no date time in ancillary tables. This prevents an EML schema validation error, where datetime attributes must have a format specified
         use_i <- eal_inputs$x$template[["attributes_observation.txt"]]$content$dateTimeFormatString != ""
         datetime_format <- eal_inputs$x$template[["attributes_observation.txt"]]$content$dateTimeFormatString[use_i]
-      } else {
-        datetime_format <- c(
-          "YYYY-MM-DD hh:mm:ss",
-          "YYYY-MM-DD hh:mm",
-          "YYYY-MM-DD hh",
-          "YYYY-MM-DD")[which(na_coerced == min(na_coerced))[1]]
       }
       
       eal_inputs$x$template[[i]]$content$dateTimeFormatString[
@@ -320,13 +316,23 @@ create_eml <- function(path,
       has_varname <- "variable_name" %in% colnames(eal_inputs$x$data.table[[tbl]]$content)
       if (has_varname) {
         univars <- unique(eal_inputs$x$data.table[[tbl]]$content$variable_name)
-        unidefs <- unname(defs[names(defs) %in% univars])
-        catvars_template <- data.frame(
-          attributeName = "variable_name",
-          code = univars,
-          definition = unidefs,
-          stringsAsFactors = FALSE)
-        return(list(content = catvars_template))
+        unidefs <- defs[names(defs) %in% univars]
+        if (length(unidefs) == 0) { # FIXME sometimes there's no match, but could use variable_mapping vals if exists
+          unidefs <- rep("NA", length(univars))
+          catvars_template <- data.frame(
+            attributeName = "variable_name",
+            code = univars,
+            definition = unname(unidefs),
+            stringsAsFactors = FALSE)
+          return(list(content = catvars_template))
+        } else {
+          catvars_template <- data.frame(
+            attributeName = "variable_name",
+            code = names(unidefs),
+            definition = unname(unidefs),
+            stringsAsFactors = FALSE)
+          return(list(content = catvars_template))
+        }
       }
     })
   names(r) <- paste0("catvars_", tools::file_path_sans_ext(names(eal_inputs$x$data.table)), ".txt")
@@ -340,13 +346,27 @@ create_eml <- function(path,
     names(eal_inputs$x$data.table),
     "taxon\\.[:alpha:]*$")
   taxon <- eal_inputs$x$data.table[[f]]$content
+
+  # Handle exceptions
+  if (!is.null(taxon$authority_system)) { # Default to taxonRankValue if missing authority cols
+    authsys <- taxon$authority_system
+  } else {
+    authsys <- NA_character_
+  }
+  if (!is.null(taxon$authority_taxon_id)) {
+    authid <- taxon$authority_taxon_id
+  } else {
+    authid <- NA_character_
+  }
+  authsys <- ifelse(is.na(authid), NA_character_, authsys) # Default to taxonRankValue if missing any required authority values
+  authid <- ifelse(is.na(authsys), NA_character_, authid)
   
   taxonomic_coverage <- data.frame(
     name = taxon$taxon_name,
     name_type = "scientific",
     name_resolved = taxon$taxon_name,
-    authority_system = ifelse(!is.null(taxon$authority_system), taxon$authority_system, NA_character_),
-    authority_id = ifelse(!is.null(taxon$authority_taxon_id), taxon$authority_taxon_id, NA_character_),
+    authority_system = authsys,
+    authority_id = authid,
     stringsAsFactors = FALSE)
   
   eal_inputs$x$template$taxonomic_coverage.txt$content <- taxonomic_coverage
@@ -423,6 +443,18 @@ create_eml <- function(path,
         file_name <- stringr::str_subset(
           names(eal_inputs$x$data.table),
           paste0(table, "\\.[:alpha:]*$"))
+        
+        if (!is.null(variable_mapping_subset$mapped_label)) { # Handle missing columns
+          objlbl <- variable_mapping_subset$mapped_label
+        } else {
+          objlbl <- ""
+        }
+        if (!is.null(variable_mapping_subset$mapped_id)) {
+          objuri <- variable_mapping_subset$mapped_id
+        } else {
+          objuri <- ""
+        }
+        
         annotation <- data.frame(
           id = paste0("/", file_name, "/variable_name"),
           element = "/dataTable/attribute",
@@ -430,8 +462,8 @@ create_eml <- function(path,
           subject = "variable_name",
           predicate_label = "is about",
           predicate_uri = "http://purl.obolibrary.org/obo/IAO_0000136",
-          object_label = ifelse(!is.null(variable_mapping_subset$mapped_label), variable_mapping_subset$mapped_label, ""),
-          object_uri = ifelse(!is.null(variable_mapping_subset$mapped_id), variable_mapping_subset$mapped_id, ""),
+          object_label = objlbl,
+          object_uri = objuri,
           stringsAsFactors = FALSE)
         # Remove duplicate annotations or the variable_name attribute (a column
         # containing multiple variables as apart of a "long" table) will have 
@@ -545,10 +577,16 @@ create_eml <- function(path,
   # Add ecocomDP specific keywords to the L0 keywords
   
   message("    <keywordSet>")
-  
-  eml_L0$dataset$keywordSet <- c(
-    eml_L0$dataset$keywordSet,
-    eml_L1$dataset$keywordSet)
+  # Two options for combining keyword sets, because of variation in the return 
+  # from EML::read_eml() (i.e. lists nodes when length > 1, and unlists when 
+  # length = 1).
+  if (!is.null(names(eml_L0$dataset$keywordSet))) {
+    eml_L0$dataset$keywordSet <- c(list(eml_L0$dataset$keywordSet),
+                                   eml_L1$dataset$keywordSet)
+  } else {
+    eml_L0$dataset$keywordSet <- c(eml_L0$dataset$keywordSet,
+                                   eml_L1$dataset$keywordSet)
+  }
   
   # Add Darwin Core basisOfRecord
   if (!is.null(basis_of_record)) {
@@ -573,10 +611,20 @@ create_eml <- function(path,
   
   # Combine taxonomic coverage of L0 and L1. While this may provide redundant 
   # information, there isn't any harm in this.
-
-  eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification <- c(
-    eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification,
-    eml_L1$dataset$coverage$taxonomicCoverage$taxonomicClassification)
+  
+  # Two options for combining taxonomic classifications, because of variation 
+  # in the return from EML::read_eml() (i.e. lists nodes when length > 1, and 
+  # unlists when length = 1).
+  
+  if (!is.null(names(eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification))) {
+    eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification <- c(
+      list(eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification),
+      eml_L1$dataset$coverage$taxonomicCoverage$taxonomicClassification)
+  } else {
+    eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification <- c(
+      eml_L0$dataset$coverage$taxonomicCoverage$taxonomicClassification,
+      eml_L1$dataset$coverage$taxonomicCoverage$taxonomicClassification)
+  }
   
   # Update <contact> ----------------------------------------------------------
   
@@ -604,17 +652,16 @@ create_eml <- function(path,
   
   # Parse components to be reordered and combined for the L1
   methods_L1 <- eml_L1$dataset$methods$methodStep
-  
   # Get provenance metadata
   r <- suppressMessages(
     api_get_provenance_metadata(
       package.id = source_id,
       environment = environment))
+  xml2::xml_set_attrs(xml2::xml_find_all(r, ".//*[@id]"), c(id = NULL)) # Remove attributes to prevent id clashing and schema invalidation
   r <- EML::read_eml(r)
   provenance_L1 <- list(
     dataSource = r$dataSource,
     description = r$description)
-
   # Combine L1 methods, L0 methods, and L0 provenance
   eml_L0$dataset$methods$methodStep <- c(
     list(methods_L1),
@@ -626,7 +673,7 @@ create_eml <- function(path,
   message("    <dataTable>")
   eml_L0$dataset$dataTable <- eml_L1$dataset$dataTable
   
-  # Add <otherEntity> ---------------------------------------------------------
+  # Update <otherEntity> ------------------------------------------------------
   
   message("    <otherEntity>")
   eml_L0$dataset$otherEntity <- eml_L1$dataset$otherEntity

@@ -2,7 +2,10 @@
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 options(tibble.print_min = 4L, tibble.print_max = 4L)
 
-## ----setup--------------------------------------------------------------------
+## ---- eval=FALSE, setup-------------------------------------------------------
+#  library(ecocomDP)
+
+## ----include=FALSE------------------------------------------------------------
 library(ecocomDP)
 
 ## ----eval=FALSE---------------------------------------------------------------
@@ -74,8 +77,8 @@ library(ecocomDP)
 #  #> [4] "North Temperate Lakes LTER: Pelagic Macroinvertebrate Abundance 1983 - current (Reformatted to ecocomDP Design Pattern)"
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  dataset_1 <- read_data("edi.193.4")
-#  #> Reading edi.193.4
+#  dataset_1 <- read_data("edi.193.5")
+#  #> Reading edi.193.5
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
@@ -85,7 +88,7 @@ library(ecocomDP)
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
 #  #>
-#  #> Validating edi.193.4:
+#  #> Validating edi.193.5:
 #  #>   Required tables
 #  #>   Column names
 #  #>   Required columns
@@ -148,7 +151,7 @@ library(ecocomDP)
 #  #>   Elevation
 #  #>   variable_mapping
 
-## ----include=FALSE------------------------------------------------------------
+## -----------------------------------------------------------------------------
 dataset_1 <- ants_L1
 
 ## -----------------------------------------------------------------------------
@@ -169,7 +172,7 @@ datasets <- c(ants_L1, ants_L1)
 
 ## ---- eval=FALSE--------------------------------------------------------------
 #  datasets <- read_data(from = paste0(mypath, "/datasets.rds"))
-#  #> Validating edi.193.4:
+#  #> Validating edi.193.5:
 #  #>   Required tables
 #  #>   Column names
 #  #>   Required columns
@@ -198,7 +201,7 @@ datasets <- c(ants_L1, ants_L1)
 
 ## ---- eval=FALSE--------------------------------------------------------------
 #  datasets <- read_data(from = mypath)
-#  #> Validating edi.193.4:
+#  #> Validating edi.193.5:
 #  #>   Required tables
 #  #>   Column names
 #  #>   Required columns

@@ -14,7 +14,11 @@ options(tibble.print_min = 4L, tibble.print_max = 4L)
 
 A set of "use" functions help you search, read, save, plot, and flatten ecocomDP datasets.
 
-```{r setup}
+```{r, eval=FALSE, setup}
+library(ecocomDP)
+```
+
+```{r include=FALSE}
 library(ecocomDP)
 ```
 
@@ -117,8 +121,8 @@ Read datasets from host APIs to get the newest authoritative version, save local
 Read from the host API:
 
 ```{r eval=FALSE}
-dataset_1 <- read_data("edi.193.4")
-#> Reading edi.193.4
+dataset_1 <- read_data("edi.193.5")
+#> Reading edi.193.5
 #>  [0%] Downloaded 0 bytes...
 #>  [0%] Downloaded 0 bytes...
 #>  [0%] Downloaded 0 bytes...
@@ -128,7 +132,7 @@ dataset_1 <- read_data("edi.193.4")
 #>  [0%] Downloaded 0 bytes...
 #>  [0%] Downloaded 0 bytes...
 #>
-#> Validating edi.193.4:
+#> Validating edi.193.5:
 #>   Required tables
 #>   Column names
 #>   Required columns
@@ -197,7 +201,7 @@ dataset_2 <- read_data(
 
 A dataset is returned as a list of metadata, tables, and validation issues (if there are any). The dataset ID is assigned to the top level for reference.
 
-```{r include=FALSE}
+```{r}
 dataset_1 <- ants_L1
 ```
 
@@ -229,7 +233,7 @@ Read a local copy from .rds
 
 ```{r, eval=FALSE}
 datasets <- read_data(from = paste0(mypath, "/datasets.rds"))
-#> Validating edi.193.4:
+#> Validating edi.193.5:
 #>   Required tables
 #>   Column names
 #>   Required columns
@@ -261,7 +265,7 @@ Read a local copy from .csv:
 
 ```{r, eval=FALSE}
 datasets <- read_data(from = mypath)
-#> Validating edi.193.4:
+#> Validating edi.193.5:
 #>   Required tables
 #>   Column names
 #>   Required columns

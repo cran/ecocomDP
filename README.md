@@ -5,9 +5,8 @@
 
 <!-- badges: start -->
 
-[![Travis-CI Build
-Status](https://travis-ci.com/EDIorg/ecocomDP.svg?branch=master)](https://travis-ci.org/EDIorg/ecocomDP)
-[![codecov.io](https://codecov.io/github/EDIorg/ecocomDP/coverage.svg?branch=master)](https://codecov.io/github/EDIorg/ecocomDP?branch=master)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/ecocomDP)](https://cran.r-project.org/package=ecocomDP)
 <!-- badges: end -->
 
 ## Overview
@@ -16,7 +15,8 @@ Tools to create, use, and convert ‘ecocomDP’ datasets. ‘ecocomDP’ is a
 dataset design pattern for harmonizing ecological community surveys in a
 research question agnostic format, from source datasets published across
 multiple repositories, and with methods that keep the derived datasets
-up-to-date as the underlying sources change.
+up-to-date as the underlying sources change. Described in O’Brien et
+al. (2021), <https://doi.org/10.1016/j.ecoinf.2021.101374>.
 
 ## Installation
 
@@ -30,16 +30,16 @@ Get the latest development version:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("EDIorg/ecocomDP")
+remotes::install_github("EDIorg/ecocomDP", ref = "development")
 ```
 
 ## Usage
 
-  - [Create ecocomDP
+-   [Create ecocomDP
     datasets](https://ediorg.github.io/ecocomDP/articles/create.html)
-  - [Use ecocomDP
+-   [Use ecocomDP
     datasets](https://ediorg.github.io/ecocomDP/articles/use.html)
-  - [Convert ecocomDP datasets to another model
+-   [Convert ecocomDP datasets to another model
     format](https://ediorg.github.io/ecocomDP/articles/convert.html)
 
 ## Getting help
@@ -50,11 +50,11 @@ filing bug reports, please include a minimal reproducible example.
 
 ## Contributing
 
-Community contributions are welcome\! Please reference our [contributing
+Community contributions are welcome! Please reference our [contributing
 guidelines](https://github.com/EDIorg/ecocomDP/blob/master/CONTRIBUTING.md)
 for details.
 
------
+------------------------------------------------------------------------
 
 Please note that this project is released with a [Contributor Code of
 Conduct](https://github.com/EDIorg/ecocomDP/blob/master/CODE_OF_CONDUCT.md).

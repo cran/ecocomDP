@@ -1,3 +1,35 @@
+# Add units to create_*() functions
+#
+# @param L0_flat (tbl_df, tbl, data.frame) The fully joined source L0 dataset, in "flat" format (see details).
+# @param res (tbl_df, tbl, data.frame) Intermediary result in create_*()
+# @param unit (character) Unit column input to create_*()
+#
+# @return (tbl_df, tbl, data.frame) \code{res} with an added unit column for the variables listed under variable_name
+#
+add_units <- function(L0_flat, res, unit) {
+  if (!is.null(unit)) {
+    unit_map <- L0_flat %>% dplyr::select(dplyr::all_of(unit)) %>% unique() # Unique unit values
+    unit_map <- as.data.frame(lapply(unit_map, stats::na.omit))                    # Remove NA
+    
+    unit_map <- data.frame(variable_name = colnames(unit_map),
+                           unit = as.character(unit_map[1, ]),              # Should only be one
+                           stringsAsFactors = FALSE)
+    unit_map$variable_name <- stringr::str_remove_all(unit_map$variable_name, 
+                                                      "unit_")
+    res <- dplyr::left_join(res, unit_map, by = "variable_name")
+  } else if (is.null(unit)) {
+    res$unit <- NA_character_
+  }
+  return(res)
+}
+
+
+
+
+
+
+
+
 # Get provenance metadata
 #
 # @description
@@ -622,7 +654,7 @@ detect_os <- function(){
 #     the site names of each parent, and adds the lowest latitude, longitude 
 #     and elevation available in the table.
 # 
-flatten_location <- function(dt_loc) {
+flatten_location_dwca <- function(dt_loc) {
   
   # Expand location table
   
@@ -878,7 +910,50 @@ is_prov <- function(nodeset) {
 
 
 
-# Parse datetime
+# Parse datetime format from values
+#
+# @param vals (character) Vector of datetimes
+# 
+# @details Only works for \code{vals} of the format "YYYY-MM-DD hh:mm:ss" and subsets thereof. Values in other formats will return errant formats (e.g. "07/20/2021" returns "YYYY-MM-DD hh").
+# 
+# @return (character) Datetime format string of \code{vals}
+# 
+parse_datetime_frmt_from_vals <- function(vals) {
+  # Modify inputs for processing
+  vals <- as.character(vals)
+  # Best match has the fewest coercions
+  na_start <- sum(is.na(vals))
+  na_end <- suppressWarnings(
+    c(sum(is.na(lubridate::parse_date_time(vals, "ymdHMS"))),
+      sum(is.na(lubridate::parse_date_time(vals, "ymdHM"))),
+      sum(is.na(lubridate::parse_date_time(vals, "ymdH"))),
+      sum(is.na(lubridate::parse_date_time(vals, "ymd"))),
+      sum(is.na(lubridate::parse_date_time(vals, "y")))))
+  na_coerced <- na_end - na_start
+  if (stats::var(na_coerced) == 0) {    # When format of vals are NA or unsupported
+    frmt <- NULL
+  } else {                       # When format of vals are supported
+    best_match <- which(na_coerced == min(na_coerced))[1]
+    frmt <- c("YYYY-MM-DD hh:mm:ss",
+              "YYYY-MM-DD hh:mm",
+              "YYYY-MM-DD hh",
+              "YYYY-MM-DD",
+              "YYYY")[best_match]
+    if (min(na_coerced) != 0) {  # When the best match doesn't represent all vals
+      warning("The best match '", frmt, "' may not describe all datetimes")
+    }
+  }
+  return(frmt)
+}
+
+
+
+
+
+
+
+
+# Parse datetime when format string is known
 #
 # @param tbl (character) Table name \code{vals} come from. This is used in warning messages.
 # @param vals (character) Vector of datetimes
@@ -886,32 +961,41 @@ is_prov <- function(nodeset) {
 # 
 # @details A wrapper to to \code{lubridate::ymd()}, \code{lubridate::ymd_h()}, \code{lubridate::ymd_hm()}, and \code{lubridate::ymd_hms()}.
 # 
-# @note No attempt at using the time zone component is made
+# @note No attempt is made at using the time zone component of \code{frmt}. Years (\code{frmt = "YYYY"}) are parsed to dates (\code{frmt = "YYYY-MM-DD"}) and a warning is raised.
 # 
 # @return (POSIXct POSIXt) Datetimes parsed
 # 
-parse_datetime <- function(tbl, vals, frmt) {
+parse_datetime_from_frmt <- function(tbl, vals, frmt) {
+  # Modify inputs for processing below
   vals <- as.character(vals)
   na_i <- sum(is.na(vals))
   vals <- stringr::str_remove_all(vals, "(Z|z).+$")
-  res <- "ymd"
-  t <- unlist(stringr::str_split(frmt, "T|[:blank:]"))[2] # time format
-  if (!is.na(t)) {                                        # build time component of lubridate func call
-    if (stringr::str_detect(tolower(t), "hh")) {
-      res <- paste0(res, "_h")
+  # Parse datetimes using lubridate
+  if (frmt == "YYYY") {
+    res <- "y"
+    parsed <- lubridate::parse_date_time(vals, res)
+    warning("Input datetimes have format 'YYYY' but are being returned as 'YYYY-MM-DD'.", call. = FALSE)
+  } else {
+    res <- "ymd"
+    t <- unlist(stringr::str_split(frmt, "T|[:blank:]"))[2] # time format
+    if (!is.na(t)) {                                        # build time component of lubridate func call
+      if (stringr::str_detect(tolower(t), "hh")) {
+        res <- paste0(res, "_h")
+      }
+      if (stringr::str_detect(tolower(t), "mm")) {
+        res <- paste0(res, "m")
+      }
+      if (stringr::str_detect(tolower(t), "ss")) {
+        res <- paste0(res, "s")
+      }
     }
-    if (stringr::str_detect(tolower(t), "mm")) {
-      res <- paste0(res, "m")
-    }
-    if (stringr::str_detect(tolower(t), "ss")) {
-      res <- paste0(res, "s")
-    }
+    parsed <- suppressWarnings(
+      eval(parse(text = paste0("lubridate::", res, "(vals)"))))
   }
-  parsed <- suppressWarnings(
-    eval(parse(text = paste0("lubridate::", res, "(vals)"))))
+  # Warn user of parsing issues
   na_f <- sum(is.na(parsed))
   if (na_f > na_i) {
-    warning((na_f - na_i), " ", tbl, " datetime strings failed to parse. Use parse_datetime = 'FALSE' to get datetimes as character strings for manual processing.", call. = FALSE)
+    warning((na_f - na_i), " ", tbl, " datetime strings failed to parse. Use parse_datetime = 'FALSE' to get datetimes as character strings for manual processing.")
   }
   return(parsed)
 }
@@ -1107,7 +1191,7 @@ join_obs_loc_tax <- function(dt_obs, dt_loc, dt_tax) {
   
   # Flatten location
   
-  dt_loc_expanded <- flatten_location(dt_loc)
+  dt_loc_expanded <- flatten_location_dwca(dt_loc)
   
   # Left join
   # Left join observation, location (expanded), and taxon tables
@@ -1543,7 +1627,7 @@ validate_path <- function(path){
 #' }
 #' 
 view_descriptions <- function() {
-  utils::browseURL("https://github.com/EDIorg/ecocomDP/blob/master/documentation/model/table_description.md")
+  utils::browseURL("https://github.com/EDIorg/ecocomDP/blob/master/model/table_description.md")
 }
 
 
@@ -1565,7 +1649,7 @@ view_descriptions <- function() {
 #' }
 #' 
 view_diagram <- function() {
-  utils::browseURL("https://github.com/EDIorg/ecocomDP/blob/master/documentation/model/table_visualization.md")
+  utils::browseURL("https://github.com/EDIorg/ecocomDP/blob/master/model/table_visualization.md")
 }
 
 

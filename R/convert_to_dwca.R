@@ -24,8 +24,8 @@
 #' convert_to_dwca(
 #'   path = mypath, 
 #'   core_name = "event", 
-#'   source_id = "edi.193.4", 
-#'   derived_id = "edi.834.1", 
+#'   source_id = "edi.193.5", 
+#'   derived_id = "edi.834.2", 
 #'   user_id = "ecocomdp",
 #'   user_domain = "EDI")
 #' 
@@ -208,6 +208,38 @@ create_tables_dwca_event_core <- function(
   # datasetName 
   dc_dataset_name <- "Dataset name"
   
+  # Handle YYYY datetime exception --------------------------------------------
+  
+  # datetime format - For parsing datetimes of L1
+  if (environment == "production") {
+    url_parent <- paste0(
+      "https://pasta.lternet.edu/package/metadata/eml/",
+      stringr::str_replace_all(source_id, "\\.", "/"))
+  } else if (environment == "staging") {
+    url_parent <- paste0(
+      "https://pasta-s.lternet.edu/package/metadata/eml/",
+      stringr::str_replace_all(source_id, "\\.", "/"))
+  }
+  xml_L1 <- suppressMessages(read_eml(source_id))
+  data_table_nodes_parent <- xml2::xml_find_all(
+    xml_L1,
+    ".//dataTable")
+  observation_table_node_parent <- data_table_nodes_parent[
+    stringr::str_detect(
+      xml2::xml_text(
+        xml2::xml_find_all(
+          xml_L1, 
+          ".//physical/objectName")), 
+      "observation\\..*$")]
+  format_string <- xml2::xml_text(
+    xml2::xml_find_all(
+      observation_table_node_parent, 
+      ".//formatString"))
+  
+  if (format_string == "YYYY") {
+    obs_loc_tax$datetime <- as.character(lubridate::year(obs_loc_tax$datetime))
+  }
+  
   # Create event --------------------------------------------------------------
   
   event_table <- data.frame(
@@ -231,7 +263,7 @@ create_tables_dwca_event_core <- function(
     id = seq(nrow(obs_loc_tax)),
     eventID = obs_loc_tax$dc_event_id,
     occurrenceID = obs_loc_tax$dc_occurrence_id,
-    basisOfRecord = "humanObservation",#obs_loc_tax$dc_basisofrecord,
+    basisOfRecord = obs_loc_tax$dc_basisofrecord,
     scientificName = obs_loc_tax$taxon_name,
     taxonID = obs_loc_tax$authority_taxon_id,
     nameAccordingTo = obs_loc_tax$authority_system,
@@ -370,12 +402,8 @@ make_eml_dwca <- function(path,
   
   # The child data package should not exist since it's being created here, but
   # could in a non-production environment
-  child_data_package_exists <- suppressWarnings(
-    !stringr::str_detect(
-      suppressMessages(
-        api_read_metadata(derived_id, environment)), 
-      "Unable to access metadata for packageId:"))
-  if (child_data_package_exists) {
+  child_data_package_exists <- api_read_metadata(derived_id, environment)
+  if ("xml_document" %in% class(child_data_package_exists)) {
     warning(
       "The L2 data package '", derived_id, "' already exists.",
       call. = FALSE)
@@ -673,19 +701,16 @@ make_eml_dwca <- function(path,
     api_get_provenance_metadata(
       package.id = source_id,
       environment = environment))
+  xml2::xml_set_attrs(xml2::xml_find_all(provenance_L1, ".//*[@id]"), c(id = NULL)) # Remove attributes to prevent id clashing
   provenance_L1 <- EML::read_eml(provenance_L1)
   provenance_L1 <- list(
     dataSource = provenance_L1$dataSource,
     description = provenance_L1$description)
   
-  L0_para <- xml2::xml_text(
-    xml2::xml_find_all(xml_L0, ".//methods//para"))
-  eml_L1$dataset$methods <- NULL
-  
   # Combine L2 methods, L0 methods, and L1 provenance
   eml_L1$dataset$methods$methodStep <- c(
     list(methods_L2),
-    list(list(description = list(para = L0_para))), # should be a methodStep - $description$para
+    list(eml_L0$data$methods$methodStep),
     list(provenance_L1))
   
   # Update <dataTable> --------------------------------------------------------

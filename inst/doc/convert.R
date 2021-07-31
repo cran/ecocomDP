@@ -12,11 +12,11 @@ library(ecocomDP)
 #  convert_to_dwca(
 #    path = mypath,
 #    core_name = "event",
-#    source_id = "edi.193.4",
-#    derived_id = "edi.834.1",
+#    source_id = "edi.193.5",
+#    derived_id = "edi.834.2",
 #    user_id = "ecocomdp",
 #    user_domain = "EDI")
-#  #> Reading edi.193.4
+#  #> Reading edi.193.5
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
@@ -26,7 +26,7 @@ library(ecocomDP)
 #  #>  [0%] Downloaded 0 bytes...
 #  #>  [0%] Downloaded 0 bytes...
 #  #>
-#  #> Validating edi.193.4:
+#  #> Validating edi.193.5:
 #  #>   Required tables
 #  #>   Column names
 #  #>   Required columns
@@ -41,9 +41,9 @@ library(ecocomDP)
 #  #>
 #  #> Creating DwC-A Event Core tables
 #  #> Creating DwC-A Event Core EML
-#  #> Reading EML of L1 data package edi.193.4
-#  #> Reading EML of L0 data package knb-lter-hfr.118.32
-#  #> Creating EML of L2 data package edi.834.1
+#  #> Reading EML of L1 data package edi.193.5
+#  #> Reading EML of L0 data package knb-lter-hfr.118.33
+#  #> Creating EML of L2 data package edi.834.2
 #  #> Updating:
 #  #>   <eml>
 #  #>   <access>
@@ -66,6 +66,6 @@ library(ecocomDP)
 
 ## ----eval=FALSE---------------------------------------------------------------
 #  dir(mypath)
-#  #> [1] "edi.834.1.xml"                 "event.csv"                     "extendedmeasurementorfact.csv"
+#  #> [1] "edi.834.2.xml"                 "event.csv"                     "extendedmeasurementorfact.csv"
 #  #> [4] "meta.xml"                      "occurrence.csv"
 

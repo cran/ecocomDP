@@ -33,10 +33,46 @@ validate_arguments <- function(fun.name, fun.args) {
   # create_eml() --------------------------------------------------------------
   
   if (fun.name == "create_eml") {
-    if ((fun.args$basis_of_record != "HumanObservation") &
-        (fun.args$basis_of_record != "MachineObservation")) {
-      stop("Invalid input to 'basis_of_record'. Must be 'HumanObservation' or 'MachineObservation'.", call. = FALSE)
+    
+    # Basis of record
+    if (!is.null(fun.args$basis_of_record)) {
+      if (length(fun.args$basis_of_record) > 1) {
+        stop("Only one basis_of_record is allowed.", call. = FALSE)
+      }
+      if ((fun.args$basis_of_record != "HumanObservation") &
+          (fun.args$basis_of_record != "MachineObservation")) {
+        stop("Invalid input to 'basis_of_record'. Must be 'HumanObservation' or 'MachineObservation'.", call. = FALSE)
+      }
     }
+    
+    # create_ecocomDP.R - A standard script format facilitates maintenance
+    if (is.null(fun.args$script)) {
+      # Warning Input argument 'script' is missing
+      stop("Input 'script' is missing.", call. = FALSE)
+    } else {
+      if (is.null(fun.args$script_description)) {
+        stop("Input 'script_description' is missing.", call. = FALSE)
+      }
+    }
+    if (!is.null(fun.args$script)) {
+      # Only one script is allowed
+      if (length(fun.args$script) != 1) {
+        stop("Only one 'script' is allowed.", call. = FALSE)
+      }
+      # Can be found in path
+      if (!(fun.args$script %in% dir(fun.args$path))) {
+        stop(paste0("The 'script' ", fun.args$script, " cannot be found ",
+                    "at 'path'."),
+             call. = FALSE)
+      }
+      # Has name 'create_ecocomDP.R'
+      if (fun.args$script != "create_ecocomDP.R") {
+        stop("The 'script' must have the name: 'create_ecocomDP.R'.", call. = FALSE)
+      }
+      # Has func 'create_ecocomDP()' including recommended arguments
+      check_script(path = paste0(fun.args$path, "/create_ecocomDP.R"))
+    }
+    
   }
   
   # create_tables() -----------------------------------------------------------
@@ -450,5 +486,42 @@ validate_dataset_structure <- function(dataset) {
   if (!all(res)) {
     stop("Input 'dataset' has invalid structure. See return from read_data() ",
          "for more details.", call. = F)
+  }
+}
+
+
+
+
+
+
+
+
+# Check for expected func names and arguments in create_ecocomDP.R
+#
+# @param path (character) Full path, including file extension, to create_ecocomDP.R
+#
+# @return Errors if expected content is missing
+# 
+check_script <- function(path) {
+  # Get script header
+  funclines <- paste(readLines(path, warn = FALSE), 
+                     collapse = " ")
+  func_header <- stringr::str_extract(
+    funclines, 
+    "create_ecocomDP[:space:]*<-[:space:]*function\\({1}([^\\)]+)(?=\\))")
+  # Test: Has expected func name
+  if (!stringr::str_detect(func_header, "create_ecocomDP")) {
+    stop("The script 'create_ecocomDP.R' does not contain the function ",
+         "create_ecocomDP().", call. = FALSE)
+  }
+  # Test: Has expected arguments
+  expected_args <- c("path", "source_id", "derived_id", "url")
+  found_args <- unlist(stringr::str_extract_all(func_header, "path|source_id|derived_id|url"))
+  missing_args <- !(expected_args %in% found_args)
+  if (any(missing_args)) {
+    stop("The function create_ecocomDP() in the 'script' create_ecocomDP.R", 
+         " is missing these arguments: ",
+         paste(expected_args[missing_args], collapse = ", "), 
+         call. = FALSE)
   }
 }

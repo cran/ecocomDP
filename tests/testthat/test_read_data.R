@@ -45,9 +45,9 @@ testthat::test_that("Reads from source APIs", {
     for (i in names(d[[1]]$tables)) {                                                 # tables are data.frames
       expect_true(class(d[[1]]$tables[[i]]) == "data.frame")
     }
-    expect_equal(                                                                     # datetimes are parsed
-      class(d[[1]]$tables$observation$datetime),
-      "Date")
+    expect_true(                                                                     # datetimes are parsed
+      all(
+        class(d[[1]]$tables$observation$datetime) %in% c("POSIXct", "POSIXt")))
     expect_equal(
       class(d[[1]]$tables$location_ancillary$datetime),
       "Date")
@@ -91,7 +91,7 @@ testthat::test_that("Reads from local .csv directories", {
   save_data(d, tempdir(), type = ".csv")
   d <- read_data(from = tempdir())            # Has expected structure
   expect_true(is.list(d))                                                             # obj is a list
-  expect_true(all(names(d) %in% ids))                                                 # 1st level name is id
+  expect_true(all(ids %in% names(d)))                                                 # 1st level name is id
   for (i in names(d)) {
     expect_true(all(names(d[[i]]) %in% c("metadata", "tables", "validation_issues"))) # 2nd level has 3 values
     for (j in names(d[[i]])) {                                                        # 2nd level objs are lists

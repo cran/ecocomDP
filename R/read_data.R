@@ -48,7 +48,7 @@
 #' @examples
 #' \dontrun{
 #' # Read from EDI
-#' dataset <- read_data("edi.193.4")
+#' dataset <- read_data("edi.193.5")
 #' # str(dataset)
 #' }
 #' 
@@ -69,14 +69,14 @@
 #' 
 #' \dontrun{
 #' # Read with datetimes as character
-#' dataset <- read_data("edi.193.4", parse_datetime = FALSE)
-#' is.character(dataset$edi.193.4$tables$observation$datetime)
+#' dataset <- read_data("edi.193.5", parse_datetime = FALSE)
+#' is.character(dataset$edi.193.5$tables$observation$datetime)
 #' }
 #' 
 #' # Save a list of datasets for reading
 #' datasets <- c(ants_L1, ants_L1, ants_L1)  # 3 of the same, w/different names
 #' names(datasets) <- c("ds1", "ds2", "ds3")
-#' mypath <- paste0(tempdir(), "/data")      # A place for saving
+#' mypath <- paste0(tempdir(), "/datasets")      # A place for saving
 #' dir.create(mypath)
 #' save_data(datasets, mypath)               # Save as .rds
 #' save_data(datasets, mypath, type = ".csv")# Save as .csv
@@ -182,11 +182,11 @@ read_data <- function(id = NULL, parse_datetime = TRUE,
       for (z in names(d[[x]]$tables[[y]])) {
         detected <- class(d[[x]]$tables[[y]][[z]])
         expected <- attr_tbl$class[(attr_tbl$table == y) & (attr_tbl$column == z)]
-        if (isTRUE(parse_datetime) & (expected == "Date") & is.character(detected)) { # NAs should be datetime for consistency
-          d[[x]]$tables[[y]][[z]] <- lubridate::as_date(d[[x]]$tables[[y]][[z]])
-        }
         if (any(detected %in% c("POSIXct", "POSIXt", "Date", "IDate"))) {
           detected <- "Date" # so downstream logic doesn't throw length() > 1 warnings
+        }
+        if (isTRUE(parse_datetime) & (expected == "Date") & (detected == "character" | detected == "logical")) { # NAs should be datetime for consistency
+          d[[x]]$tables[[y]][[z]] <- lubridate::as_date(d[[x]]$tables[[y]][[z]])
         }
         if (detected != expected) {
           if (expected == 'character'){
@@ -352,7 +352,7 @@ read_data_edi <- function(id, parse_datetime = TRUE) {
     if (!is.na(frmtstr)) {
       dtcol <- stringr::str_subset(colnames(output[[tbl]]), "datetime")
       if (isTRUE(parse_datetime)) {
-        parsed <- parse_datetime(tbl = tbl, vals = output[[tbl]][[dtcol]], frmt = frmtstr)
+        parsed <- parse_datetime_from_frmt(tbl = tbl, vals = output[[tbl]][[dtcol]], frmt = frmtstr)
         output[[tbl]][[dtcol]] <- parsed
       }
     }
@@ -462,6 +462,15 @@ read_dir <- function(paths) {
           if (any(ecocomDP_table)) {
             res <- data.table::fread(
               paste0(path, "/", list.files(path)[ecocomDP_table]))
+            # parse datetime
+            if ("datetime" %in% colnames(res)) {
+              frmt <- parse_datetime_frmt_from_vals(res$datetime)
+              if (!is.null(frmt)) {
+                res$datetime <- parse_datetime_from_frmt(tbl = x, 
+                                                         vals = res$datetime, 
+                                                         frmt = frmt)
+              }
+            }
             res <- as.data.frame(res)
             return(res)
           }
