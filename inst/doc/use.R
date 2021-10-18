@@ -151,24 +151,51 @@ library(ecocomDP)
 #  #>   Elevation
 #  #>   variable_mapping
 
-## -----------------------------------------------------------------------------
+## ----include=FALSE------------------------------------------------------------
 dataset_1 <- ants_L1
 
 ## -----------------------------------------------------------------------------
 str(dataset_1)
 
+## -----------------------------------------------------------------------------
+flat <- flatten_data(dataset_1)
+flat
+
+## ----fig.height=4, fig.width=7------------------------------------------------
+plot_taxa_accum_time(flat)
+
+plot_taxa_diversity(flat)
+plot_taxa_diversity(flat, time_window_size = "month")
+plot_taxa_diversity(flat, time_window_size = "year")
+
+plot_sample_space_time(flat)
+
+plot_taxa_shared_sites(flat)
+
+plot_taxa_rank(flat, facet_var = "location_id")
+
+plot_taxa_occur_freq(
+  data = flat,
+  facet_var = "location_id",
+  color_var = "taxon_rank")
+
+plot_taxa_abund(
+  data = flat,
+  facet_var = "location_id",
+  color_var = "taxon_rank",
+  trans = "log10")
+
+plot_sites(flat)
+
 ## ----include=FALSE------------------------------------------------------------
 datasets <- c(ants_L1, ants_L1)
 
 ## ---- eval=FALSE--------------------------------------------------------------
-#  datasets <- c(dataset_1, dataset_2)
+#  datasets <- list(dataset_1, dataset_2)
 #  mypath <- paste0(tempdir(), "/data")
 #  dir.create(mypath)
 #  
 #  save_data(datasets, mypath)
-
-## ---- eval=FALSE--------------------------------------------------------------
-#  save_data(datasets, mypath, type = ".csv")
 
 ## ---- eval=FALSE--------------------------------------------------------------
 #  datasets <- read_data(from = paste0(mypath, "/datasets.rds"))
@@ -200,6 +227,9 @@ datasets <- c(ants_L1, ants_L1)
 #  #>   variable_mapping
 
 ## ---- eval=FALSE--------------------------------------------------------------
+#  save_data(datasets, mypath, type = ".csv")
+
+## ---- eval=FALSE--------------------------------------------------------------
 #  datasets <- read_data(from = mypath)
 #  #> Validating edi.193.5:
 #  #>   Required tables
@@ -227,19 +257,4 @@ datasets <- c(ants_L1, ants_L1)
 #  #>   Latitude and longitude range
 #  #>   Elevation
 #  #>   variable_mapping
-#  
-
-## ----fig.height=4, fig.width=7------------------------------------------------
-observation_table <- datasets[[1]]$tables$observation
-dataset_id <- names(datasets[1])
-
-plot_taxa_sample_time(observation_table, dataset_id)
-plot_taxa_diversity(observation_table, dataset_id)
-plot_taxa_accum_sites(observation_table, dataset_id)
-plot_taxa_accum_time(observation_table, dataset_id)
-plot_taxa_shared_sites(observation_table, dataset_id)
-
-## -----------------------------------------------------------------------------
-flat <- flatten_data(datasets[[1]]$tables)
-flat
 
