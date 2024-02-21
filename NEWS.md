@@ -1,3 +1,17 @@
+# ecocomDP 1.3.1
+
+## Fixes
+* Resolved rate limiting errors in ping_edi() triggered by recent updates to the rate limiting mechanism in the EDI data repository and due to the lack of rate limiting procedures in the ecocomDP R package.
+
+# ecocomDP 1.3.0
+
+## Fixes
+* Fixed and cleaned up NEON data mapping functions to work with latest NEON data release, return abundance values that are finite and non-negative.
+* Added code to resolve duplicate taxon counts within sample/event IDs for NEON data.
+
+## Enhancements
+* Updated plotting functions.
+
 # ecocomDP 1.2.2
 
 ## Fixes
