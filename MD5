@@ -1,7 +1,7 @@
-56a199c4631a2f83c4c06e0024d4c0ab *DESCRIPTION
+9a245d62df6fe51d862685249b9d4937 *DESCRIPTION
 0971d889f77122c7bcd035a0578e385b *LICENSE
 825993f789d89025363cb347be00146b *NAMESPACE
-91217f3ae762539d302c27a538f2ab58 *NEWS.md
+2520e8ab7263d0f322bdcc8ef5f9a24c *NEWS.md
 a74c226fb8984ed6d9ed1ef70eda41aa *R/EAL_make_eml.R
 74c0df9b09a60c9e769da11ace5c6b6d *R/EAL_template_arguments.R
 01577496e1ab22f75696b1f24aeaae5e *R/EAL_validate.R
@@ -37,7 +37,7 @@ fd94cb2765b317a5a6deac1ffcce9b01 *R/map_neon.ecocomdp.20219.001.001.R
 e9431c21671855975a0342c40b40df06 *R/save_data.R
 098b655d0f97144ae72507fdf67da0b1 *R/search_data.R
 a705bf213fe04988c7cea737133e19c3 *R/taxonomyCleanr.R
-25711f213addf015697ce4c520f62ded *R/utilities.R
+f885750dacf372868c3d81d6b29060a4 *R/utilities.R
 732d6f0f0ac1fbc6a325c42f26311250 *R/validate_arguments.R
 d91ee8ecd72b8167eb9afc421793ad14 *R/validate_data.R
 adfe09ca30dd49afde6e4d492917a0f8 *R/zzz.R
@@ -59,7 +59,7 @@ a9e43522c497832ff4b8fd975f461df1 *inst/doc/create.html
 efe60956d204510abf291b066091a3b1 *inst/doc/shared_practices_create.html
 31ac45659bd3f13758ff720cd848396d *inst/doc/use.R
 efb5fd83a9d3014fdbf9a9780d49e4ff *inst/doc/use.Rmd
-2dee605a4e39a785afd9ba01180a8b89 *inst/doc/use.html
+5c4ed448ba3904e8c71d7e32ac9f3a32 *inst/doc/use.html
 cf114dbb75db562f7d70516e77395a1d *inst/extdata/L1_versions.txt
 a5a810eebc8222837ccbddac953b278a *inst/extdata/create_ecocomDP.R
 8b94691ecffe2baed6fcb82676a69f5f *inst/extdata/dwca_event_core/annotations.txt
@@ -162,7 +162,7 @@ d1db0109af495c4a77125b33736e0fae *tests/testthat/test_plot_taxa.R
 5e5d217acafb9cfcccab41af258dfc6e *tests/testthat/test_save_data.R
 6cc3331c7f3528f38356ba52acf50d68 *tests/testthat/test_search_data.R
 4dafcbfa1211c2f9eb1e5786259ff935 *tests/testthat/test_utilities.R
-7d1d0506022451318732841c32749785 *tests/testthat/test_validate_arguments.R
+6475317a8de2a52b93b306b0c71ea638 *tests/testthat/test_validate_arguments.R
 2420b5c00acc42f3991584e79de117b1 *tests/testthat/test_validate_data.R
 533a73156f42c4152b3ae47277018d0f *vignettes/LevelOfSurvey_final_long2.png
 61ca5ca3169cab8565854e04256c0aa8 *vignettes/MLO_final_long2.png
